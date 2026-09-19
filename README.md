@@ -22,10 +22,10 @@ omarchy plugin add https://github.com/crazybadger/omarchy-split-clock.git
 omarchy plugin enable crazybadger.split-clock
 ```
 
-Enabling puts it on the bar; drag it into the slot the stock clock occupies and turn the stock
-clock off (or `omarchy bar put crazybadger.split-clock --before omarchy.clock`, then remove
-`omarchy.clock` from the layout). `omarchy restart shell` after installing or after editing the
-plugin's code.
+Enabling adds it to the bar (it lands after the weather widget). To have it replace the stock clock
+in the same slot, edit `~/.config/omarchy/shell.json` and change `{ "id": "omarchy.clock" }` to
+`{ "id": "crazybadger.split-clock" }` (your calendar settings, `birthYear` and so on, can stay on the
+entry). `omarchy restart shell` after installing or after editing the plugin's code.
 
 ## Roll back
 
