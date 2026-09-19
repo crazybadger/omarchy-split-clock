@@ -1,4 +1,4 @@
-# Split Clock
+# Analogue Clock aka Better Calendar
 
 ![The calendar and the analogue clock popups side by side](preview.png)
 
