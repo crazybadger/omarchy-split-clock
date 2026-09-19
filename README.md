@@ -36,6 +36,18 @@ omarchy plugin disable crazybadger.split-clock
 
 The stock clock is back where it was.
 
+## Uninstall
+
+Roll back first (above) so the bar isn't left without a clock, then:
+
+```bash
+omarchy plugin remove crazybadger.split-clock
+```
+
+## Dependencies
+
+None beyond Omarchy's own shell. No extra packages, no network access, nothing to build.
+
 ## Settings
 
 Set these on the widget's entry in `~/.config/omarchy/shell.json` (they hot-reload):
@@ -71,8 +83,11 @@ Handy for a keybinding.
   `23`, `—`, `51`). Multi-monitor is not tested.
 - Plugins are unsandboxed code: read it before you install it. It is three small QML files plus the
   stock calendar.
-- The open-panel underline under the label shows while the calendar is open, not for the clock face
-  (the bar keys that indicator to the widget's primary popup).
+- The accent underline that marks an open popup sits under whichever half you clicked and slides
+  across when you hop from one popup to the other. (The bar only draws that mark for a widget's
+  primary popup, so this widget silences the bar's mark and draws its own in the same style.)
+- Right-clicking a label writes `dayFormat` / `timeFormat` to this widget's entry in `shell.json`,
+  as the stock clock does for its format. Nothing else in your configuration is touched.
 
 ## Credits
 

@@ -81,9 +81,16 @@ BarWidget {
   readonly property bool popoutSwitchClosing: calendarLoader.item ? calendarLoader.item.popoutSwitchClosing === true : false
   function closeForPopoutSwitch() { if (calendarLoader.item) calendarLoader.item.closeForPopoutSwitch() }
 
-  // The open-panel dot sits under the whole label, not just one half.
-  readonly property real openPanelIndicatorWidth: Math.max(0, layout.implicitWidth - Style.spaceReal(12))
-  readonly property real openPanelIndicatorHeight: Math.max(Style.space(10), Math.round(Style.bar.iconSlot * 0.55))
+  // The bar draws its open-panel mark centred under the whole widget, and
+  // only for the widget's primary popup. Here the mark belongs under the half
+  // that is open (day for the calendar, time for the clock face), so the bar's
+  // own is reduced to nothing (a hint that rounds to 0) and `underline` below
+  // draws it instead, in the same style.
+  readonly property real openPanelIndicatorWidth: 0.001
+  readonly property real openPanelIndicatorHeight: 0.001
+
+  readonly property bool dayOpen: calendarLoader.item ? calendarLoader.item.opened === true : false
+  readonly property bool faceOpen: faceLoader.item ? faceLoader.item.opened === true : false
 
   function injectPanels() {
     var cal = calendarLoader.item
@@ -143,6 +150,48 @@ BarWidget {
     function toggle(): void { root.togglePanel() }
     function openFace(): void { root.openFace() }
     function toggleFace(): void { root.toggleFace() }
+  }
+
+  // The open-panel mark: an accent bar on the bar's inner edge, under (or
+  // beside, on a vertical bar) the half whose popup is open. It slides
+  // between the halves when one popup hands over to the other, and fades in
+  // and out in place otherwise.
+  Rectangle {
+    id: underline
+
+    // Kept while fading out, so it does not slide away as the popup closes.
+    property Item target: dayButton
+    readonly property bool shown: root.dayOpen || root.faceOpen
+    readonly property int inset: Style.space(2)
+    readonly property string edge: root.bar && root.bar.position ? root.bar.position : "top"
+    readonly property real along: root.vertical
+      ? Math.max(Style.space(10), Math.round(Style.bar.iconSlot * 0.55))
+      : Math.max(Style.space(10), target === timeButton ? timeButton.labelWidth : dayButton.labelWidth)
+
+    Connections {
+      target: root
+      function onFaceOpenChanged() { if (root.faceOpen) underline.target = timeButton }
+      function onDayOpenChanged() { if (root.dayOpen) underline.target = dayButton }
+    }
+
+    z: 50
+    visible: opacity > 0
+    opacity: shown ? 0.9 : 0
+    color: Color.accent
+    radius: Math.min(width, height) / 2
+    width: root.vertical ? Style.space(2) : along
+    height: root.vertical ? along : Style.space(2)
+    x: root.vertical
+      ? (edge === "left" ? root.width - width - inset : inset)
+      : Math.round(layout.x + target.x + (target.width - width) / 2)
+    y: root.vertical
+      ? Math.round(layout.y + target.y + (target.height - height) / 2)
+      : (edge === "top" ? root.height - height - inset : inset)
+
+    Behavior on opacity { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+    Behavior on x { enabled: underline.opacity > 0.5; NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+    Behavior on y { enabled: underline.opacity > 0.5; NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+    Behavior on width { enabled: underline.opacity > 0.5; NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
   }
 
   Grid {
