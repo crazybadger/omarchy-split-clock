@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "crazybadger.split-clock",
+  "name": "Split Clock",
+  "version": "1.0.0",
+  "author": "crazybadger",
+  "license": "MIT",
+  "description": "Omarchy's clock, split in two: click the day to get the familiar calendar, click the time to get a minimalist analogue clock with a sweeping second hand.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Split Clock",
+    "description": "Day opens the calendar, time opens an analogue clock",
+    "category": "Time",
+    "allowMultiple": false
+  }
+}
