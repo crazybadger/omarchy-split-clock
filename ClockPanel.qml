@@ -5,7 +5,7 @@ import qs.Ui
 
 // The analogue clock popup: a square card with a bare face -- hour and
 // minute hands in the bar's foreground, a slim accent-coloured second hand
-// that sweeps rather than ticks, and a small date window. No numerals, no
+// that sweeps rather than ticks, and a small 24-hour digital time. No numerals, no
 // chrome; sized to sit where the calendar does.
 //
 // This panel is deliberately its own popout identity (no hostWidget), so the
@@ -136,12 +136,12 @@ Panel {
           }
         }
 
-        // Date window, low on the face so the hands pass over it.
+        // Digital 24-hour time, low on the face so the hands pass over it.
         Text {
           anchors.horizontalCenter: parent.horizontalCenter
           y: face.r * 1.5
           textFormat: Text.PlainText
-          text: Qt.formatDate(root.now, "ddd d").toUpperCase()
+          text: Qt.formatTime(root.now, "HH:mm")
           color: Qt.rgba(face.ink.r, face.ink.g, face.ink.b, 0.55)
           font.family: root.contentFontFamily
           font.pixelSize: Math.max(Style.font.bodySmall, Math.round(face.r * 0.085))

@@ -7,7 +7,7 @@ Omarchy's bar clock, split in two:
 - **Click the day** (`Saturday`) for the familiar calendar popup, exactly as on the stock clock.
 - **Click the time** (`23:54`) for a minimalist analogue clock: square card, bare face, hour and
   minute hands, a slim accent-coloured second hand that **sweeps** (it moves every frame, it doesn't
-  tick), and a small date window. No numerals, no chrome.
+  tick), and a small 24-hour digital time. No numerals, no chrome.
 
 Both popups appear in the same spot and the bar hands over between them with its normal cross-fade,
 so you can click from one half to the other. `Esc` closes either; `Tab` on the clock face flips to
