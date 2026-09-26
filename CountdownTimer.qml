@@ -109,6 +109,14 @@ Item {
     return parts.length ? parts.join(" ") : "0 s"
   }
 
+  // A wall-clock time for "Ends ..." and "finished at ...": "14:30" today,
+  // "Sat 14:30" within the week either side, "3 Oct 14:30" beyond that.
+  function clockTime(ms, nowMs) {
+    var d = new Date(ms)
+    if (d.toDateString() === new Date(nowMs).toDateString()) return Qt.formatTime(d, "HH:mm")
+    return Qt.formatDateTime(d, Math.abs(ms - nowMs) < 6 * 86400000 ? "ddd HH:mm" : "d MMM HH:mm")
+  }
+
   // "00:15:00". Remaining time is rounded up, so it reads 00:00:01 until the
   // moment it's done, as Apple's does.
   function format(ms) {
@@ -143,8 +151,8 @@ Item {
 
     status = st
     duration = finite(s.duration) ? Math.min(maxDuration, s.duration) : 0
-    endsAt = st === "running" ? s.endsAt : 0
-    remaining = st === "paused" ? s.remaining : 0
+    endsAt = st === "running" ? Math.min(Date.now() + maxDuration, s.endsAt) : 0
+    remaining = st === "paused" ? Math.min(maxDuration, s.remaining) : 0
     recents = Array.isArray(s.recents)
       ? s.recents.filter(function(x) { return finite(x) && x > 0 && x <= maxDuration }).slice(0, maxRecents)
       : []

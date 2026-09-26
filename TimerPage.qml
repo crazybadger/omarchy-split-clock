@@ -184,7 +184,7 @@ Item {
     anchors.top: display.bottom
     textFormat: Text.PlainText
     text: root.status === "running" && root.timer
-      ? "Ends " + Qt.formatTime(new Date(root.timer.endsAt), "HH:mm")
+      ? "Ends " + root.timer.clockTime(root.timer.endsAt, root.nowMs)
       : root.status === "paused" ? "Paused"
       : "Type or scroll to set"
     color: root.muted
@@ -208,6 +208,7 @@ Item {
       tint: root.ink
       label: "Reset"
       enabled: !root.idle || root.entry !== "" || (root.timer !== null && root.timer.recents.length > 0)
+      holdable: true
       onClicked: root.secondary()
       onHeld: root.clearAll()
     }

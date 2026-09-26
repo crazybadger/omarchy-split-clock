@@ -25,7 +25,10 @@ Item {
 
   readonly property bool fresh: !running && banked === 0
 
-  function elapsedAt(nowMs) { return running ? banked + (nowMs - startedAt) : banked }
+  // Never below what's banked: if the wall clock is stepped back while it
+  // runs (an NTP correction at boot, a manual change), it holds rather than
+  // going negative.
+  function elapsedAt(nowMs) { return running ? banked + Math.max(0, nowMs - startedAt) : banked }
   function currentLapAt(nowMs) { return Math.max(0, elapsedAt(nowMs) - lapsTotal) }
 
   function start() {

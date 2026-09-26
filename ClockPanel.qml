@@ -91,10 +91,15 @@ Panel {
 
     // A timer that ran out while the laptop was asleep or off says when.
     var detail = countdown.describe(duration)
-    if (Date.now() - endedAt > 60000) detail += " (finished at " + Qt.formatTime(new Date(endedAt), "HH:mm") + ")"
+    if (Date.now() - endedAt > 60000) detail += " (finished at " + countdown.clockTime(endedAt, Date.now()) + ")"
 
     Util.execArgv(["omarchy-notification-send", "-g", "󰔛", "-u", "critical", "Timer done", detail])
-    Util.execArgv(["pw-play", "/usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga"])
+    // The spec's alarm sound from whichever sound theme has it (freedesktop's
+    // is the usual one, but it's an optional package). Fixed paths only --
+    // nothing from outside the plugin reaches the shell.
+    Util.execArgv(["sh", "-c",
+      "for f in /usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga /usr/share/sounds/*/stereo/alarm-clock-elapsed.*; do " +
+      "[ -e \"$f\" ] && exec pw-play \"$f\"; done"])
   }
 
   // Summoning by hotkey moves no pointer, so a hover the bar was still

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "crazybadger.split-clock",
   "name": "Analogue Clock/Stopwatch/Timer aka Better Calendar",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "author": "crazybadger",
   "license": "MIT",
   "description": "Omarchy's clock, split in two: click the day for the familiar calendar, click the time for an analogue clock with a stopwatch and a countdown timer.",

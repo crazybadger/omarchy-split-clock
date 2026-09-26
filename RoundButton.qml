@@ -9,6 +9,7 @@ Item {
   property color tint: "white"
   property string fontFamily: "monospace"
   property real unit: 400   // the page width, which everything scales from
+  property bool holdable: false  // only then is a long press `held` rather than a click
   signal clicked()
   signal held()             // press and hold; a hold is not also a click
 
@@ -41,7 +42,7 @@ Item {
 
     property bool wasHeld: false
     onPressed: wasHeld = false
-    onPressAndHold: { wasHeld = true; button.held() }
+    onPressAndHold: if (button.holdable) { wasHeld = true; button.held() }
     onClicked: if (!wasHeld) button.clicked()
   }
 }
