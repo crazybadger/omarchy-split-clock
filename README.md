@@ -1,19 +1,77 @@
 # Analogue Clock aka Better Calendar
 
-![The calendar and the analogue clock popups side by side](preview.png)
+![The calendar, the analogue clock, the stopwatch and the countdown timer](preview.png)
 
 Omarchy's bar clock, split in two:
 
 - **Click the day** (`Saturday`) for the familiar calendar popup, exactly as on the stock clock.
-- **Click the time** (`23:54`) for a minimalist analogue clock: square card, bare face, hour and
-  minute hands, a slim accent-coloured second hand that **sweeps** (it moves every frame, it doesn't
-  tick), and a small 24-hour digital time. No numerals, no chrome.
+- **Click the time** (`23:54`) for a clock card with three pages, after Apple's Clock app: a
+  minimalist **analogue clock**, a **stopwatch** with lap times, and a **countdown timer** that
+  remembers your last five timers.
 
 Both popups appear in the same spot and the bar hands over between them with its normal cross-fade,
-so you can click from one half to the other. `Esc` closes either; `Tab` on the clock face flips to
+so you can click from one half to the other. `Esc` closes either; `Tab` flips from the clock card to
 the calendar.
 
-The second hand only animates while the popup is open, so it costs nothing the rest of the time.
+## The clock card
+
+Three dots along the bottom of the card switch pages: **clock · stopwatch · timer**. You can also
+use `←` / `→` (or `h` / `l`), or swipe sideways with two fingers on a touchpad. The card stays the
+same size on every page, and reopens on the page you left it on.
+
+### Clock
+
+A square card with a bare face: hour and minute hands, a slim accent-coloured second hand that
+**sweeps** (it moves every frame, it doesn't tick), and a small 24-hour digital time. No numerals,
+no chrome. The second hand only animates while the clock page is on screen, so it costs nothing the
+rest of the time.
+
+### Stopwatch
+
+The running time at the top (`04:40.95` — minutes, seconds and hundredths), **Lap** and
+**Start/Stop** in the middle, and your laps below: the running lap first, then the most recent ones
+(as many as fit, up to five). The fastest lap is marked in the accent colour and the slowest in red.
+Once stopped, **Lap** becomes **Reset**, which clears the time and the laps.
+
+| Key | |
+|-----|--|
+| `Space` | Start / Stop |
+| `Enter` | Lap, or Reset once stopped |
+
+### Timer
+
+Set the time at the top, then **Start**. No wheels to spin — either:
+
+- **type it**: the digits fill in from the right, the way a microwave's do, so `1` `5` `0` `0` sets
+  `00:15:00`. `Backspace` takes a digit back, `x` clears; or
+- **scroll** over the hours, minutes or seconds to step that field up or down.
+
+While it's running the line under the time says when it will finish (`Ends 13:24`), and
+**Start** becomes **Pause** / **Resume**. **Reset** stops it and puts its time back, ready to run
+again.
+
+Below, your **last five timers**: click one to start it straight away. **Press and hold Reset** to
+clear them (it also stops any timer, for a clean slate).
+
+When the time is up you get an Omarchy notification that stays on screen until you dismiss it, and
+an alarm sound.
+
+| Key | |
+|-----|--|
+| `0`–`9`, `Backspace`, `x` | Set the time |
+| `Space` | Start / Pause / Resume |
+| `Enter` | Reset |
+
+### While something's running
+
+A small card under the bar clock shows the stopwatch or timer counting, in the bar's own font and
+size, whenever one is running — the stopwatch if both are. It keeps out of the way while the clock
+or calendar popup is open, and clicking it opens the clock card on that page.
+
+The stopwatch and timer keep going with the popup closed, through a shell restart
+(`omarchy restart shell`) or a reboot, and while the laptop sleeps: they work from start and end
+times rather than counting ticks, so they never drift. A timer that ran out while the lid was shut
+goes off as soon as it wakes, and the notification says when it actually finished.
 
 ## Install
 
@@ -44,9 +102,17 @@ Roll back first (above) so the bar isn't left without a clock, then:
 omarchy plugin remove crazybadger.split-clock
 ```
 
+The stopwatch and timer each leave a small state file behind (see Notes); delete them too if you
+like.
+
 ## Dependencies
 
-None beyond Omarchy's own shell. No extra packages, no network access, nothing to build.
+Nothing beyond Omarchy's own shell for the clock, calendar and stopwatch. No network access,
+nothing to build.
+
+The timer's alarm sound plays the standard `alarm-clock-elapsed` sound from the
+`sound-theme-freedesktop` package with PipeWire's `pw-play`. Most installs have both already; without
+them the timer still notifies you, just silently.
 
 ## Settings
 
@@ -70,19 +136,23 @@ right-clicking writes it back to `shell.json`.
 ## IPC
 
 ```bash
-omarchy-shell crazybadger.split-clock toggle       # calendar
-omarchy-shell crazybadger.split-clock toggleFace   # analogue clock
-omarchy-shell crazybadger.split-clock close        # whichever is open
+omarchy-shell crazybadger.split-clock toggle              # calendar
+omarchy-shell crazybadger.split-clock toggleFace          # clock card
+omarchy-shell crazybadger.split-clock openPage stopwatch  # clock card on a page: clock | stopwatch | timer
+omarchy-shell crazybadger.split-clock close               # whichever is open
 ```
 
-Handy for a keybinding.
+Handy for a keybinding — `openPage timer` straight to the timer, for instance.
 
 ## Notes
 
 - Tested on Omarchy 4.0.4 with a top bar (horizontal) and briefly with a left bar (vertical: `Sat`,
-  `23`, `—`, `51`). Multi-monitor is not tested.
-- Plugins are unsandboxed code: read it before you install it. It is three small QML files plus the
-  stock calendar.
+  `23`, `—`, `51`), on one and two monitors. With several monitors every bar has its own copy of the
+  widget; they share the stopwatch and timer, and a finished timer alerts once, not once per screen.
+- Plugins are unsandboxed code: read it before you install it. It is a handful of small QML files
+  plus the stock calendar.
+- The stopwatch and timer are saved to `~/.local/state/crazybadger.split-clock.stopwatch.json` and
+  `~/.local/state/crazybadger.split-clock.timer.json`. Laps are capped at 999.
 - The accent underline that marks an open popup sits under whichever half you clicked and slides
   across when you hop from one popup to the other. (The bar only draws that mark for a widget's
   primary popup, so this widget silences the bar's mark and draws its own in the same style.)
@@ -93,4 +163,6 @@ Handy for a keybinding.
 
 `CalendarPanel.qml` and `Model.js` are Omarchy's own clock panel (MIT, Copyright (c) David Heinemeier
 Hansson), copied with only the plugin id changed. `BarWidget.qml` is adapted from Omarchy's clock
-widget. `ClockPanel.qml` is new. See `LICENSE`.
+widget, and `RunningReadout.qml` borrows the look and placement of Omarchy's `PopupCard`. The clock
+card, stopwatch and timer (`ClockPanel.qml`, `Stopwatch.qml`, `StopwatchPage.qml`,
+`CountdownTimer.qml`, `TimerPage.qml`, `RoundButton.qml`) are new. See `LICENSE`.

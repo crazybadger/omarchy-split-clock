@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "id": "crazybadger.split-clock",
   "name": "Analogue Clock aka Better Calendar",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "crazybadger",
   "license": "MIT",
-  "description": "Omarchy's clock, split in two: click the day to get the familiar calendar, click the time to get a minimalist analogue clock with a sweeping second hand.",
+  "description": "Omarchy's clock, split in two: click the day for the familiar calendar, click the time for an analogue clock with a stopwatch and a countdown timer.",
   "kinds": [
     "bar-widget"
   ],
@@ -14,7 +14,7 @@
   },
   "barWidget": {
     "displayName": "Analogue Clock aka Better Calendar",
-    "description": "Day opens the calendar, time opens an analogue clock",
+    "description": "Day opens the calendar, time opens a clock, stopwatch and timer",
     "category": "Time",
     "allowMultiple": false
   }
