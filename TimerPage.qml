@@ -95,6 +95,16 @@ Item {
     else prefillFromLast()
   }
 
+  // Press and hold Reset: a clean slate -- stops any timer, clears the entry,
+  // and forgets the recent timers, as Reset clears the stopwatch's laps.
+  function clearAll() {
+    if (!timer) return
+    timer.reset()
+    timer.clearRecents()
+    entry = ""
+    prefilled = false
+  }
+
   function startRecent(ms) {
     if (timer && idle) timer.start(ms)
   }
@@ -197,8 +207,9 @@ Item {
       fontFamily: root.fontFamily
       tint: root.ink
       label: "Reset"
-      enabled: !root.idle || root.entry !== ""
+      enabled: !root.idle || root.entry !== "" || (root.timer !== null && root.timer.recents.length > 0)
       onClicked: root.secondary()
+      onHeld: root.clearAll()
     }
 
     RoundButton {

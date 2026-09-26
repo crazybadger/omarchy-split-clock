@@ -66,6 +66,12 @@ Item {
     save()
   }
 
+  function clearRecents() {
+    if (recents.length === 0) return
+    recents = []
+    save()
+  }
+
   // Called by whichever copy raises the alert.
   function finish() {
     if (status !== "running") return

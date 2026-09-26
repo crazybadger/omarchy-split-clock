@@ -10,6 +10,7 @@ Item {
   property string fontFamily: "monospace"
   property real unit: 400   // the page width, which everything scales from
   signal clicked()
+  signal held()             // press and hold; a hold is not also a click
 
   width: Math.round(unit * 0.19)
   height: width
@@ -37,6 +38,10 @@ Item {
     anchors.fill: parent
     hoverEnabled: true
     cursorShape: Qt.PointingHandCursor
-    onClicked: button.clicked()
+
+    property bool wasHeld: false
+    onPressed: wasHeld = false
+    onPressAndHold: { wasHeld = true; button.held() }
+    onClicked: if (!wasHeld) button.clicked()
   }
 }
