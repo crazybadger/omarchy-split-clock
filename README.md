@@ -1,4 +1,4 @@
-# Analogue Clock aka Better Calendar
+# Analogue Clock/Stopwatch/Timer aka Better Calendar
 
 ![The calendar, the analogue clock, the stopwatch and the countdown timer](preview.png)
 

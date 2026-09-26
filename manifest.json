@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "crazybadger.split-clock",
-  "name": "Analogue Clock aka Better Calendar",
+  "name": "Analogue Clock/Stopwatch/Timer aka Better Calendar",
   "version": "1.1.0",
   "author": "crazybadger",
   "license": "MIT",
@@ -13,7 +13,7 @@
     "barWidget": "BarWidget.qml"
   },
   "barWidget": {
-    "displayName": "Analogue Clock aka Better Calendar",
+    "displayName": "Analogue Clock/Stopwatch/Timer aka Better Calendar",
     "description": "Day opens the calendar, time opens a clock, stopwatch and timer",
     "category": "Time",
     "allowMultiple": false
