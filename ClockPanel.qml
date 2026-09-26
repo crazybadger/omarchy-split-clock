@@ -62,8 +62,37 @@ Panel {
   readonly property color ink: root.contentForeground
   readonly property color muted: Qt.rgba(ink.r, ink.g, ink.b, 0.28)
 
-  // Owned by the panel, not the page, so it runs with the popup closed.
+  // Owned by the panel, not the page, so they run with the popup closed.
   Stopwatch { id: stopwatch }
+  CountdownTimer {
+    id: countdown
+    onExpired: root.timerExpired()
+  }
+
+  // Every monitor's bar has its own copy of this widget, all following the
+  // same timer through the shared state file. Only the first copy the bar
+  // lists raises the alert and finishes the timer (the rest see the file
+  // change), so it goes off once, not once per screen -- and if that
+  // monitor goes away, the next copy becomes the first.
+  function ownsAlerts() {
+    var copies = root.bar && typeof root.bar.moduleWidgets === "function"
+      ? root.bar.moduleWidgets(root.moduleName) : []
+    return copies.length === 0 || copies[0] === root.sibling
+  }
+
+  function timerExpired() {
+    if (!ownsAlerts()) return
+    var duration = countdown.duration
+    var endedAt = countdown.endsAt
+    countdown.finish()
+
+    // A timer that ran out while the laptop was asleep or off says when.
+    var detail = countdown.describe(duration)
+    if (Date.now() - endedAt > 60000) detail += " (finished at " + Qt.formatTime(new Date(endedAt), "HH:mm") + ")"
+
+    Util.execArgv(["omarchy-notification-send", "-g", "󰔛", "-u", "critical", "Timer done", detail])
+    Util.execArgv(["pw-play", "/usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga"])
+  }
 
   // Summoning by hotkey moves no pointer, so a hover the bar was still
   // holding must not keep the center indicators revealed behind the panel.
@@ -124,19 +153,30 @@ Panel {
       onTabRequested: function(direction) { if (root.sibling) root.sibling.open() }
       onMoveRequested: function(dx, dy) { if (dx !== 0) root.showPage(root.page + dx) }
 
-      // Stopwatch page: Space starts/stops, Enter laps (or resets once
-      // stopped). PanelKeyCatcher emits returnRequested *then*
-      // activateRequested for Enter but only activateRequested for Space, so
-      // Enter marks the activate that follows it as already handled.
+      // Stopwatch and timer pages share one scheme: Space is the right-hand
+      // button (Start/Stop, Start/Pause), Enter the left (Lap/Reset, Reset).
+      // PanelKeyCatcher emits returnRequested *then* activateRequested for
+      // Enter but only activateRequested for Space, so Enter marks the
+      // activate that follows it as already handled.
       property bool enterHandled: false
       onReturnRequested: {
         enterHandled = true
         if (root.page === 1) stopwatch.lapOrReset()
+        else if (root.page === 2) timerPage.secondary()
       }
       onActivateRequested: {
         if (enterHandled) { enterHandled = false; return }
         if (root.page === 1) stopwatch.toggle()
+        else if (root.page === 2) timerPage.primary()
       }
+
+      // Timer page: digits set the time, Backspace takes one back, x clears.
+      onTextKey: function(t) {
+        if (root.page !== 2) return
+        if (t >= "0" && t <= "9") timerPage.typeDigit(t)
+        else if (t === "\b") timerPage.backspace()
+      }
+      onDeleteRequested: if (root.page === 2) timerPage.clearEntry()
 
       // The viewport: one page wide, the three pages side by side in `strip`,
       // which slides to the current one.
@@ -313,20 +353,15 @@ Panel {
             fontFamily: root.contentFontFamily
           }
 
-          // ---- Page 3: countdown timer (placeholder until its design lands).
-          Item {
+          // ---- Page 3: countdown timer.
+          TimerPage {
+            id: timerPage
             width: pager.width
             height: pager.height
-
-            Text {
-              anchors.centerIn: parent
-              textFormat: Text.PlainText
-              text: "Timer"
-              color: root.muted
-              font.family: root.contentFontFamily
-              font.pixelSize: Style.font.body
-              font.letterSpacing: 1.5
-            }
+            timer: countdown
+            active: root.opened && root.page === 2
+            ink: root.ink
+            fontFamily: root.contentFontFamily
           }
         }
       }

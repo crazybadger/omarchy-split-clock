@@ -56,43 +56,9 @@ Item {
     return out.slice(0, maxRows)
   }
 
-  component RoundButton: Item {
-    id: button
-    property string label: ""
-    property color tint: root.ink
-    signal clicked()
-
-    width: Math.round(root.unit * 0.19)
-    height: width
-    opacity: enabled ? 1 : 0.4
-
-    Rectangle {
-      anchors.fill: parent
-      radius: width / 2
-      color: Qt.rgba(button.tint.r, button.tint.g, button.tint.b, area.containsMouse && button.enabled ? 0.28 : 0.18)
-      antialiasing: true
-      Behavior on color { ColorAnimation { duration: 120 } }
-    }
-
-    Text {
-      anchors.centerIn: parent
-      textFormat: Text.PlainText
-      text: button.label
-      color: button.tint
-      font.family: root.fontFamily
-      font.pixelSize: Math.round(root.unit * 0.042)
-    }
-
-    MouseArea {
-      id: area
-      anchors.fill: parent
-      hoverEnabled: true
-      cursorShape: Qt.PointingHandCursor
-      onClicked: button.clicked()
-    }
-  }
-
-  // ---- The running time.
+  // ---- The running time. Size and position shared with the timer page
+  //      (as are the buttons' below), so swiping between them keeps
+  //      everything in place.
   Text {
     id: display
     anchors.horizontalCenter: parent.horizontalCenter
@@ -101,15 +67,14 @@ Item {
     text: root.sw ? root.sw.format(root.elapsed) : "00:00.0"
     color: root.ink
     font.family: root.fontFamily
-    font.pixelSize: Math.round(root.unit * 0.16)
+    font.pixelSize: Math.round(root.unit * 0.15)
     font.weight: Font.Light
   }
 
   // ---- Lap/Reset and Start/Stop.
   Item {
     id: buttons
-    anchors.top: display.bottom
-    anchors.topMargin: Math.round(root.height * 0.05)
+    y: Math.round(root.height * 0.35)
     anchors.horizontalCenter: parent.horizontalCenter
     width: Math.round(root.unit * 0.74)
     height: lapButton.height
@@ -117,6 +82,9 @@ Item {
     RoundButton {
       id: lapButton
       anchors.left: parent.left
+      unit: root.unit
+      fontFamily: root.fontFamily
+      tint: root.ink
       label: root.sw && !root.sw.running && !root.sw.fresh ? "Reset" : "Lap"
       enabled: root.sw !== null && !root.sw.fresh
       onClicked: root.sw.lapOrReset()
@@ -124,6 +92,8 @@ Item {
 
     RoundButton {
       anchors.right: parent.right
+      unit: root.unit
+      fontFamily: root.fontFamily
       label: root.sw && root.sw.running ? "Stop" : "Start"
       tint: root.sw && root.sw.running ? Color.urgent : Color.accent
       onClicked: root.sw.toggle()
