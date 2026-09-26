@@ -74,6 +74,11 @@ BarWidget {
   function togglePanel() { if (calendarLoader.item) calendarLoader.item.toggle() }
   function openFace() { if (faceLoader.item) faceLoader.item.open() }
   function toggleFace() { if (faceLoader.item) faceLoader.item.toggle() }
+  function openFacePage(name) {
+    if (!faceLoader.item) return
+    faceLoader.item.showPageNamed(name)
+    faceLoader.item.open()
+  }
   function toggleWeekStart() { if (calendarLoader.item) calendarLoader.item.toggleWeekStart() }
 
   // Forwarded so this widget can stand in for the calendar as the bar's
@@ -150,6 +155,7 @@ BarWidget {
     function toggle(): void { root.togglePanel() }
     function openFace(): void { root.openFace() }
     function toggleFace(): void { root.toggleFace() }
+    function openPage(name: string): void { root.openFacePage(name) }
   }
 
   // The open-panel mark: an accent bar on the bar's inner edge, under (or
