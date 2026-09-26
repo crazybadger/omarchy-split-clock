@@ -62,6 +62,9 @@ Panel {
   readonly property color ink: root.contentForeground
   readonly property color muted: Qt.rgba(ink.r, ink.g, ink.b, 0.28)
 
+  // Owned by the panel, not the page, so it runs with the popup closed.
+  Stopwatch { id: stopwatch }
+
   // Summoning by hotkey moves no pointer, so a hover the bar was still
   // holding must not keep the center indicators revealed behind the panel.
   function setCenterHoverRevealSuppressed(value) {
@@ -120,6 +123,20 @@ Panel {
       onCloseRequested: root.close()
       onTabRequested: function(direction) { if (root.sibling) root.sibling.open() }
       onMoveRequested: function(dx, dy) { if (dx !== 0) root.showPage(root.page + dx) }
+
+      // Stopwatch page: Space starts/stops, Enter laps (or resets once
+      // stopped). PanelKeyCatcher emits returnRequested *then*
+      // activateRequested for Enter but only activateRequested for Space, so
+      // Enter marks the activate that follows it as already handled.
+      property bool enterHandled: false
+      onReturnRequested: {
+        enterHandled = true
+        if (root.page === 1) stopwatch.lapOrReset()
+      }
+      onActivateRequested: {
+        if (enterHandled) { enterHandled = false; return }
+        if (root.page === 1) stopwatch.toggle()
+      }
 
       // The viewport: one page wide, the three pages side by side in `strip`,
       // which slides to the current one.
@@ -286,20 +303,14 @@ Panel {
             }
           }
 
-          // ---- Page 2: stopwatch (placeholder until its design lands).
-          Item {
+          // ---- Page 2: stopwatch.
+          StopwatchPage {
             width: pager.width
             height: pager.height
-
-            Text {
-              anchors.centerIn: parent
-              textFormat: Text.PlainText
-              text: "Stopwatch"
-              color: root.muted
-              font.family: root.contentFontFamily
-              font.pixelSize: Style.font.body
-              font.letterSpacing: 1.5
-            }
+            sw: stopwatch
+            active: root.opened && root.page === 1
+            ink: root.ink
+            fontFamily: root.contentFontFamily
           }
 
           // ---- Page 3: countdown timer (placeholder until its design lands).
