@@ -15,12 +15,10 @@ Item {
 
   readonly property color muted: Qt.rgba(ink.r, ink.g, ink.b, 0.28)
 
-  // Repainted every 50 ms only while it's on screen and counting; otherwise
-  // the figures are static and nothing ticks.
+  // Repainted every frame (it shows hundredths) but only while it's on screen
+  // and counting; otherwise the figures are static and nothing ticks.
   property real nowMs: Date.now()
-  Timer {
-    interval: 50
-    repeat: true
+  FrameAnimation {
     running: root.active && root.sw !== null && root.sw.running
     onTriggered: root.nowMs = Date.now()
   }
@@ -64,7 +62,7 @@ Item {
     anchors.horizontalCenter: parent.horizontalCenter
     y: Math.round(root.height * 0.07)
     textFormat: Text.PlainText
-    text: root.sw ? root.sw.format(root.elapsed) : "00:00.0"
+    text: root.sw ? root.sw.format(root.elapsed) : "00:00.00"
     color: root.ink
     font.family: root.fontFamily
     font.pixelSize: Math.round(root.unit * 0.15)

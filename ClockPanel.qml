@@ -63,6 +63,9 @@ Panel {
   readonly property color muted: Qt.rgba(ink.r, ink.g, ink.b, 0.28)
 
   // Owned by the panel, not the page, so they run with the popup closed.
+  // Exposed for the bar widget's running readout.
+  readonly property var stopwatchState: stopwatch
+  readonly property var timerState: countdown
   Stopwatch { id: stopwatch }
   CountdownTimer {
     id: countdown

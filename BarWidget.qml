@@ -142,6 +142,18 @@ BarWidget {
     onLoaded: { root.injectPanels(); Qt.callLater(root.injectPanels) }
   }
 
+  // The small running stopwatch/timer card under the time.
+  RunningReadout {
+    anchorItem: timeButton
+    bar: root.bar
+    stopwatch: faceLoader.item ? faceLoader.item.stopwatchState : null
+    timer: faceLoader.item ? faceLoader.item.timerState : null
+    suppressed: root.opened
+    fontFamily: timeButton.fontFamily
+    fontSize: timeButton.fontSize
+    onActivated: function(page) { root.openFacePage(page) }
+  }
+
   IpcHandler {
     target: "crazybadger.split-clock"
 

@@ -63,15 +63,16 @@ Item {
   // The left button: Lap while running, Reset once stopped (as Apple's).
   function lapOrReset() { running ? lap() : reset() }
 
-  // "12:34.5", or "1:02:03.4" past the hour.
+  // "12:34.56", or "1:02:03.45" past the hour -- the same eight-character
+  // shape as the timer's 00:00:00.
   function format(ms) {
-    var tenths = Math.floor(ms / 100)
-    var t = tenths % 10
-    var s = Math.floor(tenths / 10) % 60
-    var m = Math.floor(tenths / 600) % 60
-    var h = Math.floor(tenths / 36000)
+    var cs = Math.floor(ms / 10)
+    var c = cs % 100
+    var s = Math.floor(cs / 100) % 60
+    var m = Math.floor(cs / 6000) % 60
+    var h = Math.floor(cs / 360000)
     function pad(n) { return n < 10 ? "0" + n : String(n) }
-    return (h > 0 ? h + ":" + pad(m) : pad(m)) + ":" + pad(s) + "." + t
+    return (h > 0 ? h + ":" + pad(m) : pad(m)) + ":" + pad(s) + "." + pad(c)
   }
 
   // ---- Persistence. Loading never writes, so the watching copies can't
