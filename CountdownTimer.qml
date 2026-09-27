@@ -19,6 +19,10 @@ Item {
   property real endsAt: 0          // epoch ms, while running
   property real remaining: 0       // ms left, while paused
   property var recents: []         // durations in ms, newest first
+  // Repeat: when a round runs out the timer goes straight into the next one
+  // (an interval timer -- 30 s a side for tortillas), until it's reset.
+  property bool repeat: false
+  property int round: 1            // which round is running, while repeating
 
   signal expired()
 
@@ -34,6 +38,7 @@ Item {
     duration = ms
     endsAt = Date.now() + ms
     remaining = 0
+    round = 1
     status = "running"
     var r = recents.filter(function(x) { return x !== ms })
     r.unshift(ms)
@@ -60,7 +65,28 @@ Item {
     status = "idle"
     endsAt = 0
     remaining = 0
+    round = 1
     save()
+  }
+
+  function toggleRepeat() {
+    repeat = !repeat
+    save()
+  }
+
+  // Called by whichever copy raises the alert, instead of `finish`, while
+  // repeating. The next round is timed from when this one was due, not from
+  // now, so rounds don't drift -- unless the laptop slept through a round or
+  // more, when it starts afresh from now.
+  // Returns false (and does nothing) if there's no round length to repeat.
+  function nextRound() {
+    if (status !== "running" || !(duration > 0)) return false
+    var next = endsAt + duration
+    if (next <= Date.now()) next = Date.now() + duration
+    endsAt = next
+    round = Math.min(9999, round + 1)
+    save()
+    return true
   }
 
   // A clean slate: stops any timer and forgets the recent timers and the
@@ -71,6 +97,7 @@ Item {
     remaining = 0
     duration = 0
     recents = []
+    round = 1
     save()
   }
 
@@ -80,6 +107,7 @@ Item {
     status = "idle"
     endsAt = 0
     remaining = 0
+    round = 1
     save()
   }
 
@@ -132,7 +160,8 @@ Item {
   function save() { changed() }
 
   function snapshot() {
-    return { status: status, duration: duration, endsAt: endsAt, remaining: remaining, recents: recents }
+    return { status: status, duration: duration, endsAt: endsAt, remaining: remaining, recents: recents,
+             repeat: repeat, round: round }
   }
 
   function finite(v) { return typeof v === "number" && isFinite(v) && v >= 0 }
@@ -143,6 +172,7 @@ Item {
     var st = s.status === "running" || s.status === "paused" ? s.status : "idle"
     if (st === "running" && !(finite(s.endsAt) && s.endsAt > 0)) st = "idle"
     if (st === "paused" && !finite(s.remaining)) st = "idle"
+    if (st !== "idle" && !(finite(s.duration) && s.duration > 0)) st = "idle"
 
     status = st
     duration = finite(s.duration) ? Math.min(maxDuration, s.duration) : 0
@@ -151,5 +181,7 @@ Item {
     recents = Array.isArray(s.recents)
       ? s.recents.filter(function(x) { return finite(x) && x > 0 && x <= maxDuration }).slice(0, maxRecents)
       : []
+    repeat = s.repeat === true
+    round = finite(s.round) && st !== "idle" ? Math.max(1, Math.min(9999, Math.floor(s.round))) : 1
   }
 }

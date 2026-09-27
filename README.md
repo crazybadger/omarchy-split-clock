@@ -75,11 +75,19 @@ clear them and set the time back to 00:00:00 (it also stops any timer, for a cle
 When the time is up you get an Omarchy notification that stays on screen until you dismiss it, and
 an alarm sound.
 
+**Repeat** (the small `󰑖` button between Reset and Start, or `r`) turns it into an interval timer:
+when a round runs out the alarm sounds and the next round starts straight away, timed from when the
+last one was due so they never drift -- 30 s a side for tortillas in a hot pan. There's no
+notification for each round, just the sound; the line under the time counts the rounds
+(`Ends 13:24 · round 3`). Reset stops it; repeat stays on for next time until you switch it off.
+Switch it off mid-run and the current round finishes like a normal timer.
+
 | Key | |
 |-----|--|
 | `0`–`9`, `Backspace`, `x` | Set the time |
 | `Space` | Start / Pause / Resume |
 | `Enter` | Reset |
+| `r` | Repeat on / off |
 
 ### While something's running
 

@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import qs.Commons
 import qs.Ui
 
@@ -141,6 +142,14 @@ Panel {
     if (!ownsAlerts()) return
     var duration = countdown.duration
     var endedAt = countdown.endsAt
+
+    // Repeating: straight into the next round with just the alarm sound --
+    // no notification, which every 30 s would only pile up.
+    if (countdown.repeat && countdown.nextRound()) {
+      root.playAlarm()
+      return
+    }
+
     countdown.finish()
 
     // A timer that ran out while the laptop was asleep or off says when.
@@ -148,13 +157,25 @@ Panel {
     if (Date.now() - endedAt > 60000) detail += " (finished at " + countdown.clockTime(endedAt, Date.now()) + ")"
 
     Util.execArgv(["omarchy-notification-send", "-g", "󰔛", "-u", "critical", "Timer done", detail])
+    root.playAlarm()
+  }
+
+  function playAlarm() {
+    // One at a time: the sound is ~6 s, so short repeating rounds would
+    // otherwise stack up overlapping players.
+    if (!alarm.running) alarm.running = true
+  }
+
+  Process {
+    id: alarm
     // The spec's alarm sound from whichever sound theme has it (freedesktop's
     // is the usual one, but it's an optional package). Fixed paths only --
     // nothing from outside the plugin reaches the shell.
-    Util.execArgv(["sh", "-c",
+    command: ["sh", "-c",
       "for f in /usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga /usr/share/sounds/*/stereo/alarm-clock-elapsed.*; do " +
-      "[ -e \"$f\" ] && exec pw-play \"$f\"; done"])
+      "[ -e \"$f\" ] && exec timeout 15 pw-play \"$f\"; done"]
   }
+
 
   // Summoning by hotkey moves no pointer, so a hover the bar was still
   // holding must not keep the center indicators revealed behind the panel.
@@ -236,10 +257,12 @@ Panel {
         else if (root.pageName === "timer") timerPage.primary()
       }
 
-      // Timer page: digits set the time, Backspace takes one back, x clears.
+      // Timer page: digits set the time, Backspace takes one back, x clears,
+      // r turns repeat on or off.
       onTextKey: function(t) {
         if (root.pageName !== "timer") return
-        if (t >= "0" && t <= "9") timerPage.typeDigit(t)
+        if (t === "r" || t === "R") countdown.toggleRepeat()
+        else if (t >= "0" && t <= "9") timerPage.typeDigit(t)
         else if (t === "\b") timerPage.backspace()
       }
       onDeleteRequested: if (root.pageName === "timer") timerPage.clearEntry()

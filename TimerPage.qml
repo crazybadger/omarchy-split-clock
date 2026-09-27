@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons
+import qs.Ui
 
 // The countdown timer page. Laid out like the stopwatch so the two feel like
 // one app: the time at the top, Reset and Start/Pause in the middle, and the
@@ -185,7 +186,9 @@ Item {
     textFormat: Text.PlainText
     text: root.status === "running" && root.timer
       ? "Ends " + root.timer.clockTime(root.timer.endsAt, root.nowMs)
-      : root.status === "paused" ? "Paused"
+        + (root.timer.repeat ? " · round " + root.timer.round : "")
+      : root.status === "paused" ? "Paused" + (root.timer && root.timer.repeat ? " · round " + root.timer.round : "")
+      : root.timer && root.timer.repeat ? "Repeats until you reset it"
       : "Type or scroll to set"
     color: root.muted
     font.family: root.fontFamily
@@ -211,6 +214,44 @@ Item {
       holdable: true
       onClicked: root.secondary()
       onHeld: root.clearAll()
+    }
+
+    // Repeat, between the two: a smaller toggle. On, a finished round goes
+    // straight into the next one (an interval timer) until Reset.
+    Rectangle {
+      id: repeatButton
+      anchors.centerIn: parent
+      width: Math.round(root.unit * 0.1)
+      height: width
+      radius: width / 2
+      readonly property bool on: root.timer !== null && root.timer.repeat
+      readonly property color tint: on ? Color.accent : root.ink
+      color: Qt.rgba(tint.r, tint.g, tint.b, repeatArea.containsMouse ? 0.28 : (on ? 0.2 : 0.1))
+      antialiasing: true
+      Behavior on color { ColorAnimation { duration: 120 } }
+
+      Text {
+        anchors.centerIn: parent
+        textFormat: Text.PlainText
+        text: "󰑖"
+        color: repeatButton.on ? Color.accent : root.muted
+        font.family: root.fontFamily
+        font.pixelSize: Math.round(parent.width * 0.55)
+      }
+
+      MouseArea {
+        id: repeatArea
+        anchors.fill: parent
+        hoverEnabled: true
+        cursorShape: Qt.PointingHandCursor
+        onClicked: if (root.timer) root.timer.toggleRepeat()
+      }
+
+      PanelToolTip {
+        visible: repeatArea.containsMouse
+        text: repeatButton.on ? "Repeat on (r)" : "Repeat (r)"
+        fontFamily: root.fontFamily
+      }
     }
 
     RoundButton {
