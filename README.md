@@ -1,13 +1,13 @@
-# Analogue Clock/Stopwatch/Timer aka Better Calendar
+# Apple-like Clock aka Better Calendar
 
 ![The calendar, the analogue clock, the stopwatch and the countdown timer](preview.png)
 
 Omarchy's bar clock, split in two:
 
 - **Click the day** (`Saturday`) for the familiar calendar popup, exactly as on the stock clock.
-- **Click the time** (`23:54`) for a clock card with three pages, after Apple's Clock app: a
-  minimalist **analogue clock**, a **stopwatch** with lap times, and a **countdown timer** that
-  remembers your last five timers.
+- **Click the time** (`23:54`) for a clock card with four pages, after Apple's Clock app: a
+  **world clock**, a minimalist **analogue clock**, a **stopwatch** with lap times, and a
+  **countdown timer** that remembers your last five timers.
 
 Both popups appear in the same spot and the bar hands over between them with its normal cross-fade,
 so you can click from one half to the other. `Esc` closes either; `Tab` flips from the clock card to
@@ -15,9 +15,28 @@ the calendar.
 
 ## The clock card
 
-Three dots along the bottom of the card switch pages: **clock · stopwatch · timer**. You can also
-use `←` / `→` (or `h` / `l`), or swipe sideways with two fingers on a touchpad. The card stays the
-same size on every page, and reopens on the page you left it on.
+Four dots along the bottom of the card switch pages: **world · clock · stopwatch · timer**. You can
+also use `←` / `→` (or `h` / `l`), or swipe sideways with two fingers on a touchpad. The card stays
+the same size on every page. It always opens on the clock -- or on the stopwatch or timer while one
+is running, so the thing that's counting is what you see first.
+
+### World clock
+
+A search field at the top: type a city and pick from what it finds (the region and country tell the
+four Portlands apart), with a click, `↑` / `↓` and `Enter`, or **+**. Each place shows its time,
+its country and its offset from GMT (`GMT+5:45`), and `Tomorrow` or `Yesterday` when its date isn't
+yours. The newest goes in at the top. Hover a place for the **✕** that removes it. Six fit on the
+card, and that's the limit -- remove one to add another.
+
+Summer time is handled: the offsets come from your system's time zone data and are rechecked every
+ten minutes while the page is showing.
+
+| Key | |
+|-----|--|
+| typing | Search (the field has the keys as soon as you arrive on the page) |
+| `↑` / `↓`, `Enter` | Choose a result, add it |
+| `Esc` | Clear the search; again to hand the keys back to the card |
+| `←` / `→` | Switch pages, when the field is empty |
 
 ### Clock
 
@@ -51,7 +70,7 @@ While it's running the line under the time says when it will finish (`Ends 13:24
 again.
 
 Below, your **last five timers**: click one to start it straight away. **Press and hold Reset** to
-clear them (it also stops any timer, for a clean slate).
+clear them and set the time back to 00:00:00 (it also stops any timer, for a clean slate).
 
 When the time is up you get an Omarchy notification that stays on screen until you dismiss it, and
 an alarm sound.
@@ -102,17 +121,22 @@ Roll back first (above) so the bar isn't left without a clock, then:
 omarchy plugin remove crazybadger.split-clock
 ```
 
-The stopwatch and timer each leave a small state file behind (see Notes); delete them too if you
-like.
+The saved stopwatch, timer and world clocks are left behind in
+`~/.local/state/crazybadger.split-clock/`; delete it too if you like.
 
 ## Dependencies
 
-Nothing beyond Omarchy's own shell for the clock, calendar and stopwatch. No network access,
-nothing to build.
+Nothing to build or install beyond what Omarchy already has: its shell, and `python3` (which Omarchy
+itself depends on) for the small helper that saves state and runs the world clock search.
 
-The timer's alarm sound plays the standard `alarm-clock-elapsed` sound from the
-`sound-theme-freedesktop` package with PipeWire's `pw-play`. Most installs have both already; without
-them the timer still notifies you, just silently.
+**Network:** only the world clock's search goes online. While you type a search, the helper asks
+[Open-Meteo's geocoding API](https://open-meteo.com/en/docs/geocoding-api) -- the same free, keyless
+service Omarchy's weather panel uses -- for matching places. Nothing else is sent anywhere, and the
+clocks themselves work offline once added.
+
+The timer's alarm sound is the standard `alarm-clock-elapsed` sound, from whichever installed sound
+theme has it (usually `sound-theme-freedesktop`), played with PipeWire's `pw-play`. Without one the
+timer still notifies you, just silently.
 
 ## Settings
 
@@ -138,7 +162,7 @@ right-clicking writes it back to `shell.json`.
 ```bash
 omarchy-shell crazybadger.split-clock toggle              # calendar
 omarchy-shell crazybadger.split-clock toggleFace          # clock card
-omarchy-shell crazybadger.split-clock openPage stopwatch  # clock card on a page: clock | stopwatch | timer
+omarchy-shell crazybadger.split-clock openPage stopwatch  # clock card on a page: world | clock | stopwatch | timer
 omarchy-shell crazybadger.split-clock close               # whichever is open
 ```
 
@@ -148,11 +172,21 @@ Handy for a keybinding — `openPage timer` straight to the timer, for instance.
 
 - Tested on Omarchy 4.0.4 with a top bar (horizontal) and briefly with a left bar (vertical: `Sat`,
   `23`, `—`, `51`), on one and two monitors. With several monitors every bar has its own copy of the
-  widget; they share the stopwatch and timer, and a finished timer alerts once, not once per screen.
-- Plugins are unsandboxed code: read it before you install it. It is a handful of small QML files
-  plus the stock calendar.
-- The stopwatch and timer are saved to `~/.local/state/crazybadger.split-clock.stopwatch.json` and
-  `~/.local/state/crazybadger.split-clock.timer.json`. Laps are capped at 999.
+  widget; they share the stopwatch, timer and world clocks, and a finished timer alerts once, not
+  once per screen.
+- Plugins are unsandboxed code: read it before you install it. It is a handful of small QML files,
+  one small Python helper, and the stock calendar.
+- **Saved state** -- the stopwatch, the timer and the world clocks -- lives in
+  `~/.local/state/crazybadger.split-clock/` (`stopwatch.json`, `timer.json`, `world.json`). The
+  shell never reads or writes these itself: `split-clock-helper.py` does, and it refuses rather than
+  follows a symlink. Every directory on the way there is opened relative to the one before without
+  following links, the directory must be yours and private (it's created `0700`), and files must be
+  regular files of yours under 64 KiB. Saves go to a new `0600` file that is then renamed into place
+  through the same directory handle, so a link planted at a state path, or swapped in partway
+  through, is never written through. The helper runs under a time limit and its output is capped.
+  Laps are capped at 999, recent timers at five, world clocks at six.
+- 1.1.0 kept its state in `~/.local/state/crazybadger.split-clock.stopwatch.json` and `.timer.json`;
+  those are no longer read, so delete them if you have them.
 - The accent underline that marks an open popup sits under whichever half you clicked and slides
   across when you hop from one popup to the other. (The bar only draws that mark for a widget's
   primary popup, so this widget silences the bar's mark and draws its own in the same style.)
@@ -164,5 +198,6 @@ Handy for a keybinding — `openPage timer` straight to the timer, for instance.
 `CalendarPanel.qml` and `Model.js` are Omarchy's own clock panel (MIT, Copyright (c) David Heinemeier
 Hansson), copied with only the plugin id changed. `BarWidget.qml` is adapted from Omarchy's clock
 widget, and `RunningReadout.qml` borrows the look and placement of Omarchy's `PopupCard`. The clock
-card, stopwatch and timer (`ClockPanel.qml`, `Stopwatch.qml`, `StopwatchPage.qml`,
-`CountdownTimer.qml`, `TimerPage.qml`, `RoundButton.qml`) are new. See `LICENSE`.
+card, world clock, stopwatch and timer (`ClockPanel.qml`, `WorldClocks.qml`, `WorldPage.qml`,
+`Stopwatch.qml`, `StopwatchPage.qml`, `CountdownTimer.qml`, `TimerPage.qml`, `RoundButton.qml`,
+`Helper.qml`, `split-clock-helper.py`) are new. See `LICENSE`.

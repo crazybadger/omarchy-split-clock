@@ -74,10 +74,11 @@ BarWidget {
   function togglePanel() { if (calendarLoader.item) calendarLoader.item.toggle() }
   function openFace() { if (faceLoader.item) faceLoader.item.open() }
   function toggleFace() { if (faceLoader.item) faceLoader.item.toggle() }
+  // Another monitor's copy passing on a stopwatch/timer/world change.
+  function receiveState(name, snap) { if (faceLoader.item) faceLoader.item.receiveState(name, snap) }
   function openFacePage(name) {
     if (!faceLoader.item) return
-    faceLoader.item.showPageNamed(name)
-    faceLoader.item.open()
+    faceLoader.item.open(name)
   }
   function toggleWeekStart() { if (calendarLoader.item) calendarLoader.item.toggleWeekStart() }
 

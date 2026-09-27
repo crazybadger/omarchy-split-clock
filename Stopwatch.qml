@@ -1,15 +1,12 @@
 import QtQuick
-import Quickshell
-import Quickshell.Io
 
 // Stopwatch state, kept apart from its page so it keeps running whether or
 // not the popup is open.
 //
 // Timestamp-based: elapsed = banked + (now - startedAt). Nothing accumulates
-// tick by tick, so it can't drift, it counts through suspend as Apple's does,
-// and it survives a shell restart through the state file. Every bar gets its
-// own copy of this widget (one per monitor); they all share the one file and
-// watch it, so a stopwatch started on one screen reads the same on the others.
+// tick by tick, so it can't drift, and it counts through suspend as Apple's
+// does. ClockPanel saves it (through the helper) whenever it `changed`, loads
+// it at start, and hands each change to the other monitors' copies.
 Item {
   id: root
   visible: false
@@ -78,24 +75,18 @@ Item {
     return (h > 0 ? h + ":" + pad(m) : pad(m)) + ":" + pad(s) + "." + pad(c)
   }
 
-  // ---- Persistence. Loading never writes, so the watching copies can't
-  //      bounce the file back and forth between them.
-  readonly property string statePath: Quickshell.env("HOME") + "/.local/state/crazybadger.split-clock.stopwatch.json"
+  // ---- Persistence. `load` never signals `changed`, so copies passing a
+  //      change along can't bounce it back and forth.
+  signal changed()
+  function save() { changed() }
 
-  function save() {
-    stateFile.setText(JSON.stringify({
-      running: running,
-      startedAt: startedAt,
-      banked: banked,
-      laps: laps
-    }) + "\n")
+  function snapshot() {
+    return { running: running, startedAt: startedAt, banked: banked, laps: laps }
   }
 
   function finite(v) { return typeof v === "number" && isFinite(v) && v >= 0 }
 
-  function load(text) {
-    var s
-    try { s = JSON.parse(text) } catch (e) { return }
+  function load(s) {
     if (!s || typeof s !== "object") return
 
     var cleanLaps = Array.isArray(s.laps) ? s.laps.filter(finite).slice(0, maxLaps) : []
@@ -107,15 +98,5 @@ Item {
     banked = finite(s.banked) ? s.banked : 0
     laps = cleanLaps
     lapsTotal = total
-  }
-
-  FileView {
-    id: stateFile
-    path: root.statePath
-    watchChanges: true
-    atomicWrites: true
-    printErrors: false
-    onLoaded: root.load(text())
-    onFileChanged: reload()
   }
 }

@@ -1,11 +1,8 @@
 import QtQuick
-import Quickshell
-import Quickshell.Io
 
 // Countdown timer state, kept apart from its page so it runs whether or not
 // the popup is open. Same approach as Stopwatch.qml: timestamps, not ticks,
-// saved to a state file that every monitor's copy of the widget shares and
-// watches.
+// saved by ClockPanel whenever it `changed`.
 //
 // This only notices that the time is up (`expired`). Finishing and alerting
 // is ClockPanel's job, so that with several monitors exactly one copy does
@@ -66,8 +63,13 @@ Item {
     save()
   }
 
-  function clearRecents() {
-    if (recents.length === 0) return
+  // A clean slate: stops any timer and forgets the recent timers and the
+  // last timer's time, so the page comes back at 00:00:00.
+  function forgetAll() {
+    status = "idle"
+    endsAt = 0
+    remaining = 0
+    duration = 0
     recents = []
     save()
   }
@@ -125,24 +127,17 @@ Item {
     return pad(Math.floor(t / 3600)) + ":" + pad(Math.floor(t / 60) % 60) + ":" + pad(t % 60)
   }
 
-  // ---- Persistence. Loading never writes (see Stopwatch.qml).
-  readonly property string statePath: Quickshell.env("HOME") + "/.local/state/crazybadger.split-clock.timer.json"
+  // ---- Persistence. `load` never signals `changed` (see Stopwatch.qml).
+  signal changed()
+  function save() { changed() }
 
-  function save() {
-    stateFile.setText(JSON.stringify({
-      status: status,
-      duration: duration,
-      endsAt: endsAt,
-      remaining: remaining,
-      recents: recents
-    }) + "\n")
+  function snapshot() {
+    return { status: status, duration: duration, endsAt: endsAt, remaining: remaining, recents: recents }
   }
 
   function finite(v) { return typeof v === "number" && isFinite(v) && v >= 0 }
 
-  function load(text) {
-    var s
-    try { s = JSON.parse(text) } catch (e) { return }
+  function load(s) {
     if (!s || typeof s !== "object") return
 
     var st = s.status === "running" || s.status === "paused" ? s.status : "idle"
@@ -156,15 +151,5 @@ Item {
     recents = Array.isArray(s.recents)
       ? s.recents.filter(function(x) { return finite(x) && x > 0 && x <= maxDuration }).slice(0, maxRecents)
       : []
-  }
-
-  FileView {
-    id: stateFile
-    path: root.statePath
-    watchChanges: true
-    atomicWrites: true
-    printErrors: false
-    onLoaded: root.load(text())
-    onFileChanged: reload()
   }
 }

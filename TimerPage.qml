@@ -96,11 +96,11 @@ Item {
   }
 
   // Press and hold Reset: a clean slate -- stops any timer, clears the entry,
-  // and forgets the recent timers, as Reset clears the stopwatch's laps.
+  // and forgets the recent timers and the last timer's time (back to
+  // 00:00:00), as Reset clears the stopwatch's laps.
   function clearAll() {
     if (!timer) return
-    timer.reset()
-    timer.clearRecents()
+    timer.forgetAll()
     entry = ""
     prefilled = false
   }

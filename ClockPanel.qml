@@ -8,7 +8,7 @@ import qs.Ui
 // that sweeps rather than ticks, and a small 24-hour digital time. No numerals, no
 // chrome; sized to sit where the calendar does.
 //
-// The card has three pages -- clock, stopwatch, timer -- after Apple's Clock
+// The card has four pages -- world, clock, stopwatch, timer -- after Apple's Clock
 // app, switched by the dots along the bottom, Left/Right (or h/l), or a
 // horizontal two-finger swipe. Tab still hands over to the calendar. The card
 // keeps the same size on every page so switching never moves the popup.
@@ -45,10 +45,18 @@ Panel {
 
   function refresh() { root.now = new Date() }
 
-  // Kept across open/close (the panel is hidden, not destroyed), so the popup
-  // comes back on the page you left it on, as Apple's app does.
-  readonly property var pageNames: ["clock", "stopwatch", "timer"]
-  property int page: 0
+  // The world clock sits left of the face, but the card always opens on the
+  // face -- or on the stopwatch or timer while one is running (the stopwatch
+  // first, as in the bar's readout).
+  readonly property var pageNames: ["world", "clock", "stopwatch", "timer"]
+  readonly property string pageName: pageNames[page]
+  property int page: 1
+
+  function defaultPage() {
+    if (stopwatch.running) return "stopwatch"
+    if (countdown.status === "running") return "timer"
+    return "clock"
+  }
 
   function showPage(index) {
     root.page = Math.max(0, Math.min(root.pageNames.length - 1, index))
@@ -66,16 +74,62 @@ Panel {
   // Exposed for the bar widget's running readout.
   readonly property var stopwatchState: stopwatch
   readonly property var timerState: countdown
-  Stopwatch { id: stopwatch }
+  Stopwatch {
+    id: stopwatch
+    onChanged: root.persist("stopwatch", snapshot())
+  }
   CountdownTimer {
     id: countdown
     onExpired: root.timerExpired()
+    onChanged: root.persist("timer", snapshot())
+  }
+  WorldClocks {
+    id: world
+    onChanged: root.persist("world", snapshot())
+  }
+
+  // ---- Saving. The helper does the disk work (`store`) and the searching
+  //      (`net`, so a slow search never holds up a save). Each state is read
+  //      once at start. A change is saved by the copy it happened on, which
+  //      also hands it straight to the other monitors' copies.
+  Helper { id: store }
+  Helper { id: net }
+
+  function stateFor(name) {
+    return name === "stopwatch" ? stopwatch : name === "timer" ? countdown : name === "world" ? world : null
+  }
+
+  Component.onCompleted: {
+    ["stopwatch", "timer", "world"].forEach(function(name) {
+      store.run(["read", name], function(text) {
+        if (!text) return
+        var s = null
+        try { s = JSON.parse(text) } catch (e) { return }
+        root.stateFor(name).load(s)
+      })
+    })
+  }
+
+  function persist(name, snap) {
+    store.save(name, snap)
+    var copies = root.bar && typeof root.bar.moduleWidgets === "function"
+      ? root.bar.moduleWidgets(root.moduleName) : []
+    for (var i = 0; i < copies.length; i++) {
+      if (copies[i] !== root.sibling && typeof copies[i].receiveState === "function")
+        copies[i].receiveState(name, snap)
+    }
+  }
+
+  // From another monitor's copy (via BarWidget.receiveState).
+  function receiveState(name, snap) {
+    var target = stateFor(name)
+    if (target) target.load(JSON.parse(JSON.stringify(snap)))
   }
 
   // Every monitor's bar has its own copy of this widget, all following the
-  // same timer through the shared state file. Only the first copy the bar
-  // lists raises the alert and finishes the timer (the rest see the file
-  // change), so it goes off once, not once per screen -- and if that
+  // same timer (see `persist`). Only the first copy the bar lists raises the
+  // alert and finishes the timer (which hands the finish to the rest), so it
+  // goes off once, not once per screen -- and if that
   // monitor goes away, the next copy becomes the first.
   function ownsAlerts() {
     var copies = root.bar && typeof root.bar.moduleWidgets === "function"
@@ -111,7 +165,9 @@ Panel {
       root.bar.centerHoverRevealSuppressed = value
   }
 
-  function open() {
+  // `pageName` when asked for a particular page (the readout, IPC openPage).
+  function open(pageName) {
+    showPageNamed(pageName && pageNames.indexOf(String(pageName).toLowerCase()) >= 0 ? pageName : defaultPage())
     refresh()
     root.controller.show()
     Qt.callLater(function() {
@@ -127,18 +183,18 @@ Panel {
   // Only while the clock page is the one showing: no per-frame work for a
   // face that's slid out of view.
   FrameAnimation {
-    running: root.opened && root.page === 0 && root.secondHandMode === "sweep"
+    running: root.opened && root.pageName === "clock" && root.secondHandMode === "sweep"
     onTriggered: root.now = new Date()
   }
 
   Timer {
     interval: root.secondHandMode === "tick" ? 1000 : 60000
     repeat: true
-    running: root.opened && root.page === 0 && root.secondHandMode !== "sweep"
+    running: root.opened && root.pageName === "clock" && root.secondHandMode !== "sweep"
     onTriggered: root.now = new Date()
   }
 
-  onPageChanged: if (root.page === 0) root.refresh()
+  onPageChanged: if (root.pageName === "clock") root.refresh()
 
   KeyboardPanel {
     id: panel
@@ -157,6 +213,8 @@ Panel {
     PanelKeyCatcher {
       id: keyCatcher
       anchors.fill: parent
+      // The world page's search field takes the keys while it has focus.
+      blocked: worldPage.searchFocused
       onCloseRequested: root.close()
       onTabRequested: function(direction) { if (root.sibling) root.sibling.open() }
       onMoveRequested: function(dx, dy) { if (dx !== 0) root.showPage(root.page + dx) }
@@ -169,22 +227,22 @@ Panel {
       property bool enterHandled: false
       onReturnRequested: {
         enterHandled = true
-        if (root.page === 1) stopwatch.lapOrReset()
-        else if (root.page === 2) timerPage.secondary()
+        if (root.pageName === "stopwatch") stopwatch.lapOrReset()
+        else if (root.pageName === "timer") timerPage.secondary()
       }
       onActivateRequested: {
         if (enterHandled) { enterHandled = false; return }
-        if (root.page === 1) stopwatch.toggle()
-        else if (root.page === 2) timerPage.primary()
+        if (root.pageName === "stopwatch") stopwatch.toggle()
+        else if (root.pageName === "timer") timerPage.primary()
       }
 
       // Timer page: digits set the time, Backspace takes one back, x clears.
       onTextKey: function(t) {
-        if (root.page !== 2) return
+        if (root.pageName !== "timer") return
         if (t >= "0" && t <= "9") timerPage.typeDigit(t)
         else if (t === "\b") timerPage.backspace()
       }
-      onDeleteRequested: if (root.page === 2) timerPage.clearEntry()
+      onDeleteRequested: if (root.pageName === "timer") timerPage.clearEntry()
 
       // The viewport: one page wide, the three pages side by side in `strip`,
       // which slides to the current one.
@@ -231,11 +289,27 @@ Panel {
           height: pager.height
           x: -root.page * pager.width
 
+          // Slides between pages, but jumps when the card opens on its page.
           Behavior on x {
+            enabled: root.opened
             NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
           }
 
-          // ---- Page 1: the clock face.
+          // ---- Page 1: world clock.
+          WorldPage {
+            id: worldPage
+            width: pager.width
+            height: pager.height
+            clocks: world
+            helper: net
+            active: root.opened && root.pageName === "world"
+            ink: root.ink
+            fontFamily: root.contentFontFamily
+            onReleaseFocus: keyCatcher.forceActiveFocus()
+            onPageRequested: function(dx) { root.showPage(root.page + dx) }
+          }
+
+          // ---- Page 2: the clock face.
           Item {
             width: pager.width
             height: pager.height
@@ -351,23 +425,23 @@ Panel {
             }
           }
 
-          // ---- Page 2: stopwatch.
+          // ---- Page 3: stopwatch.
           StopwatchPage {
             width: pager.width
             height: pager.height
             sw: stopwatch
-            active: root.opened && root.page === 1
+            active: root.opened && root.pageName === "stopwatch"
             ink: root.ink
             fontFamily: root.contentFontFamily
           }
 
-          // ---- Page 3: countdown timer.
+          // ---- Page 4: countdown timer.
           TimerPage {
             id: timerPage
             width: pager.width
             height: pager.height
             timer: countdown
-            active: root.opened && root.page === 2
+            active: root.opened && root.pageName === "timer"
             ink: root.ink
             fontFamily: root.contentFontFamily
           }
