@@ -77,9 +77,9 @@ an alarm sound.
 
 **Repeat** (the small `󰑖` button between Reset and Start, or `r`) turns it into an interval timer:
 when a round runs out the alarm sounds and the next round starts straight away, timed from when the
-last one was due so they never drift -- 30 s a side for tortillas in a hot pan. There's no
-notification for each round, just the sound; the line under the time counts the rounds
-(`Ends 13:24 · round 3`). Reset stops it; repeat stays on for next time until you switch it off.
+last one was due so they never drift -- 30 s a side for tortillas in a hot pan. Each round also
+shows a short "Round 3 done" notice that closes by itself as the alarm stops (about 6 s), so they
+never stack up; the line under the time counts the rounds too (`Ends 13:24 · round 3`). Reset stops it; repeat stays on for next time until you switch it off.
 Switch it off mid-run and the current round finishes like a normal timer.
 
 | Key | |

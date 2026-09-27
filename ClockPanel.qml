@@ -143,11 +143,17 @@ Panel {
     var duration = countdown.duration
     var endedAt = countdown.endsAt
 
-    // Repeating: straight into the next round with just the alarm sound --
-    // no notification, which every 30 s would only pile up.
-    if (countdown.repeat && countdown.nextRound()) {
-      root.playAlarm()
-      return
+    // Repeating: straight into the next round, with the alarm and a notice
+    // that closes itself after about as long as the alarm plays (low urgency
+    // takes a timeout; the one-off "Timer done" below stays until dismissed).
+    if (countdown.repeat) {
+      var done = countdown.round
+      if (countdown.nextRound()) {
+        Util.execArgv(["omarchy-notification-send", "-g", "󰑖", "-u", "low", "-t", "6000",
+          "Round " + done + " done", countdown.describe(duration) + " · round " + countdown.round + " running"])
+        root.playAlarm()
+        return
+      }
     }
 
     countdown.finish()
