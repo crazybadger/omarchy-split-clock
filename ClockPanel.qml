@@ -9,7 +9,7 @@ import qs.Ui
 // that sweeps rather than ticks, and a small 24-hour digital time. No numerals, no
 // chrome; sized to sit where the calendar does.
 //
-// The card has four pages -- world, clock, stopwatch, timer -- after Apple's Clock
+// The card has five pages -- world, clock, alarms, stopwatch, timer -- after Apple's Clock
 // app, switched by the dots along the bottom, Left/Right (or h/l), or a
 // horizontal two-finger swipe. Tab still hands over to the calendar. The card
 // keeps the same size on every page so switching never moves the popup.
@@ -49,11 +49,12 @@ Panel {
   // The world clock sits left of the face, but the card always opens on the
   // face -- or on the stopwatch or timer while one is running (the stopwatch
   // first, as in the bar's readout).
-  readonly property var pageNames: ["world", "clock", "stopwatch", "timer"]
+  readonly property var pageNames: ["world", "clock", "alarms", "stopwatch", "timer"]
   readonly property string pageName: pageNames[page]
   property int page: 1
 
   function defaultPage() {
+    if (alarmState.ringing) return "alarms"
     if (stopwatch.running) return "stopwatch"
     if (countdown.status === "running") return "timer"
     return "clock"
@@ -88,6 +89,11 @@ Panel {
     id: world
     onChanged: root.persist("world", snapshot())
   }
+  Alarms {
+    id: alarmState
+    onChanged: root.persist("alarms", snapshot())
+    onDue: function(alarm, occurrence, snoozed) { root.alarmDue(alarm, occurrence, snoozed) }
+  }
 
   // ---- Saving. The helper does the disk work (`store`) and the searching
   //      (`net`, so a slow search never holds up a save). Each state is read
@@ -97,11 +103,12 @@ Panel {
   Helper { id: net }
 
   function stateFor(name) {
-    return name === "stopwatch" ? stopwatch : name === "timer" ? countdown : name === "world" ? world : null
+    return name === "stopwatch" ? stopwatch : name === "timer" ? countdown : name === "world" ? world
+      : name === "alarms" ? alarmState : null
   }
 
   Component.onCompleted: {
-    ["stopwatch", "timer", "world"].forEach(function(name) {
+    ["stopwatch", "timer", "world", "alarms"].forEach(function(name) {
       store.run(["read", name], function(text) {
         if (!text) return
         var s = null
@@ -164,6 +171,40 @@ Panel {
 
     Util.execArgv(["omarchy-notification-send", "-g", "󰔛", "-u", "critical", "Timer done", detail])
     root.playAlarm()
+  }
+
+  // An alarm fell due (on every copy; the one that owns alerts acts). On time,
+  // it rings: the alarm sound repeating for up to a minute and a notification
+  // that stays, which opens this page. Found late -- it fell due while the
+  // laptop slept -- it only says so.
+  function alarmDue(alarm, occurrence, snoozed) {
+    if (!ownsAlerts()) return
+    var label = alarm.label || "Alarm"
+    var time = alarmState.timeText(alarm)
+    var open = ["--exec", "omarchy-shell", root.moduleName, "openPage", "alarms"]
+    if (Date.now() - occurrence > 60000) {
+      alarmState.markMissed(alarm.id, occurrence)
+      Util.execArgv(["omarchy-notification-send", "-g", "󰀠", "-u", "critical", "Missed alarm " + time,
+        label + " (the laptop was asleep)"].concat(open))
+      return
+    }
+    alarmState.ring(alarm.id, occurrence)
+    Util.execArgv(["omarchy-notification-send", "-g", "󰀠", "-u", "critical",
+      (snoozed ? "Snoozed alarm " : "Alarm ") + time, label].concat(open))
+    alarmRings = 0
+    alarmSound.restart()
+  }
+
+  property int alarmRings: 0
+  Timer {
+    id: alarmSound
+    interval: 7000              // the sound is ~6 s
+    repeat: true
+    triggeredOnStart: true
+    onTriggered: {
+      if (!alarmState.ringing || ++root.alarmRings > 9) { stop(); return }
+      root.playAlarm()
+    }
   }
 
   function playAlarm() {
@@ -240,8 +281,8 @@ Panel {
     PanelKeyCatcher {
       id: keyCatcher
       anchors.fill: parent
-      // The world page's search field takes the keys while it has focus.
-      blocked: worldPage.searchFocused
+      // The world page's search and the alarm label take the keys while focused.
+      blocked: worldPage.searchFocused || alarmsPage.labelFocused
       onCloseRequested: root.close()
       onTabRequested: function(direction) { if (root.sibling) root.sibling.open() }
       onMoveRequested: function(dx, dy) { if (dx !== 0) root.showPage(root.page + dx) }
@@ -256,22 +297,32 @@ Panel {
         enterHandled = true
         if (root.pageName === "stopwatch") stopwatch.lapOrReset()
         else if (root.pageName === "timer") timerPage.secondary()
+        else if (root.pageName === "alarms") alarmState.ringing ? alarmState.snooze() : alarmsPage.addAlarm()
       }
       onActivateRequested: {
         if (enterHandled) { enterHandled = false; return }
         if (root.pageName === "stopwatch") stopwatch.toggle()
         else if (root.pageName === "timer") timerPage.primary()
+        else if (root.pageName === "alarms") alarmState.stop()
       }
 
       // Timer page: digits set the time, Backspace takes one back, x clears,
       // r turns repeat on or off.
       onTextKey: function(t) {
+        if (root.pageName === "alarms") {
+          if (t >= "0" && t <= "9") alarmsPage.typeDigit(t)
+          else if (t === "\b") alarmsPage.backspace()
+          return
+        }
         if (root.pageName !== "timer") return
         if (t === "r" || t === "R") countdown.toggleRepeat()
         else if (t >= "0" && t <= "9") timerPage.typeDigit(t)
         else if (t === "\b") timerPage.backspace()
       }
-      onDeleteRequested: if (root.pageName === "timer") timerPage.clearEntry()
+      onDeleteRequested: {
+        if (root.pageName === "timer") timerPage.clearEntry()
+        else if (root.pageName === "alarms") alarmsPage.clearEntry()
+      }
 
       // The viewport: one page wide, the three pages side by side in `strip`,
       // which slides to the current one.
@@ -454,7 +505,19 @@ Panel {
             }
           }
 
-          // ---- Page 3: stopwatch.
+          // ---- Page 3: alarms.
+          AlarmsPage {
+            id: alarmsPage
+            width: pager.width
+            height: pager.height
+            alarms: alarmState
+            active: root.opened && root.pageName === "alarms"
+            ink: root.ink
+            fontFamily: root.contentFontFamily
+            onReleaseFocus: keyCatcher.forceActiveFocus()
+          }
+
+          // ---- Page 4: stopwatch.
           StopwatchPage {
             width: pager.width
             height: pager.height
@@ -464,7 +527,7 @@ Panel {
             fontFamily: root.contentFontFamily
           }
 
-          // ---- Page 4: countdown timer.
+          // ---- Page 5: countdown timer.
           TimerPage {
             id: timerPage
             width: pager.width

@@ -2,7 +2,7 @@
 """The split clock's small helper: everything that touches the disk or the
 network, kept out of the long-lived shell.
 
-    read NAME          print NAME's saved state (stopwatch, timer, world)
+    read NAME          print NAME's saved state (stopwatch, timer, world, alarms)
     write NAME JSON    replace NAME's saved state with JSON
     geocode QUERY      search places (Open-Meteo), print up to 5 as JSON
     offsets ZONE...    print each zone's current UTC offset in minutes
@@ -26,7 +26,7 @@ import urllib.parse
 import urllib.request
 import zoneinfo
 
-NAMES = {"stopwatch", "timer", "world"}
+NAMES = {"stopwatch", "timer", "world", "alarms"}
 STATE_DIR = (".local", "state", "crazybadger.split-clock")
 MAX_STATE = 64 * 1024
 MAX_RESPONSE = 256 * 1024
