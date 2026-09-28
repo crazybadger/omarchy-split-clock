@@ -9,7 +9,7 @@ import qs.Ui
 // that sweeps rather than ticks, and a small 24-hour digital time. No numerals, no
 // chrome; sized to sit where the calendar does.
 //
-// The card has five pages -- world, clock, alarms, stopwatch, timer -- after Apple's Clock
+// The card has five pages -- world, clock, stopwatch, timer, alarms -- after Apple's Clock
 // app, switched by the dots along the bottom, Left/Right (or h/l), or a
 // horizontal two-finger swipe. Tab still hands over to the calendar. The card
 // keeps the same size on every page so switching never moves the popup.
@@ -49,7 +49,7 @@ Panel {
   // The world clock sits left of the face, but the card always opens on the
   // face -- or on the stopwatch or timer while one is running (the stopwatch
   // first, as in the bar's readout).
-  readonly property var pageNames: ["world", "clock", "alarms", "stopwatch", "timer"]
+  readonly property var pageNames: ["world", "clock", "stopwatch", "timer", "alarms"]
   readonly property string pageName: pageNames[page]
   property int page: 1
 
@@ -505,19 +505,7 @@ Panel {
             }
           }
 
-          // ---- Page 3: alarms.
-          AlarmsPage {
-            id: alarmsPage
-            width: pager.width
-            height: pager.height
-            alarms: alarmState
-            active: root.opened && root.pageName === "alarms"
-            ink: root.ink
-            fontFamily: root.contentFontFamily
-            onReleaseFocus: keyCatcher.forceActiveFocus()
-          }
-
-          // ---- Page 4: stopwatch.
+          // ---- Page 3: stopwatch.
           StopwatchPage {
             width: pager.width
             height: pager.height
@@ -527,7 +515,7 @@ Panel {
             fontFamily: root.contentFontFamily
           }
 
-          // ---- Page 5: countdown timer.
+          // ---- Page 4: countdown timer.
           TimerPage {
             id: timerPage
             width: pager.width
@@ -536,6 +524,18 @@ Panel {
             active: root.opened && root.pageName === "timer"
             ink: root.ink
             fontFamily: root.contentFontFamily
+          }
+
+          // ---- Page 5: alarms.
+          AlarmsPage {
+            id: alarmsPage
+            width: pager.width
+            height: pager.height
+            alarms: alarmState
+            active: root.opened && root.pageName === "alarms"
+            ink: root.ink
+            fontFamily: root.contentFontFamily
+            onReleaseFocus: keyCatcher.forceActiveFocus()
           }
         }
       }
