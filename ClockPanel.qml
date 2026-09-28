@@ -565,10 +565,11 @@ Panel {
               anchors.centerIn: parent
               textFormat: Text.PlainText
               text: root.pageIcons[parent.index]
-              color: root.ink
+              // The page showing is lit in the theme's accent, the rest muted.
+              color: root.page === parent.index ? Color.accent : root.ink
               font.family: root.contentFontFamily
               font.pixelSize: Style.space(15)
-              opacity: root.page === parent.index ? 0.9 : (dotArea.containsMouse ? 0.5 : 0.28)
+              opacity: root.page === parent.index ? 1 : (dotArea.containsMouse ? 0.5 : 0.28)
               Behavior on opacity { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
             }
 
