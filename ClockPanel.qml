@@ -51,7 +51,7 @@ Panel {
   // first, as in the bar's readout).
   readonly property var pageNames: ["world", "clock", "stopwatch", "timer", "alarms"]
   readonly property string pageName: pageNames[page]
-  readonly property var pageIcons: ["󰖟", "󰥔", "󰔛", "󰔟", "󰀠"]
+  readonly property var pageIcons: ["󰖟", "󰅐", "󰔛", "󰔟", "󰀠"]
   readonly property var pageTitles: ["World clock", "Clock", "Stopwatch", "Timer", "Alarms"]
   property int page: 1
 
