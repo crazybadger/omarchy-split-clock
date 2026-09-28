@@ -46,18 +46,26 @@ Item {
 
   function repeats(a) { return a.days.some(function(d) { return d }) }
 
+  // Listed by time of day, earliest first (as Apple's are): the order stays put
+  // as alarms ring, and the page's "Next:" line says which is next.
+  function sorted(list) {
+    return list.slice().sort(function(a, b) {
+      return (a.hour * 60 + a.minute) - (b.hour * 60 + b.minute) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
+    })
+  }
+
   // ---- Editing. Every edit re-arms the alarm from now, so changing it never
   //      makes an occurrence that has already passed go off.
   function add(hour, minute, label, days) {
     if (full || !(hour >= 0 && hour < 24 && minute >= 0 && minute < 60)) return false
     var now = Date.now()
-    alarms = [{
+    alarms = sorted([{
       id: String(now) + "-" + Math.floor(Math.random() * 1e6),
       hour: hour, minute: minute,
       label: String(label || "").slice(0, 40),
       days: (days || [false, false, false, false, false, false, false]).slice(0, 7),
       enabled: true, armedAt: now, lastFired: 0, snoozeUntil: 0
-    }].concat(alarms)
+    }].concat(alarms))
     changed()
     return true
   }
@@ -198,7 +206,7 @@ Item {
         snoozeUntil: finite(a.snoozeUntil) ? a.snoozeUntil : 0
       })
     }
-    alarms = out
+    alarms = sorted(out)
     ringingId = typeof s.ringingId === "string" && find(s.ringingId) ? s.ringingId : ""
     ringingSince = finite(s.ringingSince) ? s.ringingSince : 0
   }

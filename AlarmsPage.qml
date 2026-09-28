@@ -4,7 +4,7 @@ import qs.Ui
 
 // The alarms page, laid out like the world clock: a row to add one at the top
 // (a time typed or scrolled like the timer's, an optional label, +), and the
-// alarms below -- the time, the label and the repeat days (click a letter;
+// alarms below, by time of day -- the time, the label and the repeat days (click a letter;
 // none lit is once), an on/off switch, and the ringed ✕ on hover. Six fit,
 // which is also the limit. While one is ringing, the add row gives way to
 // Snooze and Stop. The alarms themselves live in Alarms.qml.
