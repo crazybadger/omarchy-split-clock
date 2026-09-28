@@ -51,6 +51,8 @@ Panel {
   // first, as in the bar's readout).
   readonly property var pageNames: ["world", "clock", "stopwatch", "timer", "alarms"]
   readonly property string pageName: pageNames[page]
+  readonly property var pageIcons: ["󰖟", "󰥔", "󰔛", "󰔟", "󰀠"]
+  readonly property var pageTitles: ["World clock", "Clock", "Stopwatch", "Timer", "Alarms"]
   property int page: 1
 
   function defaultPage() {
@@ -546,25 +548,27 @@ Panel {
         id: dots
         anchors.bottom: parent.bottom
         anchors.horizontalCenter: parent.horizontalCenter
-        height: Style.space(22)
-        spacing: 0
+        height: Style.space(26)
+        spacing: Style.space(2)
 
         Repeater {
           model: root.pageNames.length
 
           Item {
             required property int index
-            width: Style.space(22)
+            width: Style.space(30)
             height: dots.height
 
-            Rectangle {
+            // A small icon per page, lit like a page dot when it's the one
+            // showing: globe, clock, stopwatch, hourglass, alarm clock.
+            Text {
               anchors.centerIn: parent
-              width: Style.space(7)
-              height: width
-              radius: width / 2
+              textFormat: Text.PlainText
+              text: root.pageIcons[parent.index]
               color: root.ink
+              font.family: root.contentFontFamily
+              font.pixelSize: Style.space(15)
               opacity: root.page === parent.index ? 0.9 : (dotArea.containsMouse ? 0.5 : 0.28)
-              antialiasing: true
               Behavior on opacity { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
             }
 
@@ -574,6 +578,12 @@ Panel {
               hoverEnabled: true
               cursorShape: Qt.PointingHandCursor
               onClicked: root.showPage(parent.index)
+            }
+
+            PanelToolTip {
+              visible: dotArea.containsMouse
+              text: root.pageTitles[parent.index]
+              fontFamily: root.contentFontFamily
             }
           }
         }
