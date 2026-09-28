@@ -297,7 +297,7 @@ Item {
           Text {
             visible: text !== ""
             textFormat: Text.PlainText
-            text: row.modelData.label ? row.modelData.label + " ·" : (row.once ? "Once ·" : "")
+            text: row.modelData.label ? row.modelData.label + (row.once ? " · once ·" : " ·") : (row.once ? "Once ·" : "")
             color: root.soft
             font.family: root.fontFamily
             font.pixelSize: Math.round(root.unit * 0.029)

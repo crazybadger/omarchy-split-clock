@@ -181,13 +181,14 @@ Panel {
   // laptop slept -- it only says so.
   function alarmDue(alarm, occurrence, snoozed) {
     if (!ownsAlerts()) return
-    var label = alarm.label || "Alarm"
+    // Notification bodies may be rendered as markup; the label is plain text.
+    var label = String(alarm.label || "Alarm").replace(/[<>&]/g, "")
     var time = alarmState.timeText(alarm)
     var open = ["--exec", "omarchy-shell", root.moduleName, "openPage", "alarms"]
     if (Date.now() - occurrence > 60000) {
       alarmState.markMissed(alarm.id, occurrence)
       Util.execArgv(["omarchy-notification-send", "-g", "󰀠", "-u", "critical", "Missed alarm " + time,
-        label + " (the laptop was asleep)"].concat(open))
+        label + " (the laptop was asleep or off)"].concat(open))
       return
     }
     alarmState.ring(alarm.id, occurrence)
@@ -197,7 +198,21 @@ Panel {
     alarmSound.restart()
   }
 
+  // IPC stopAlarm / snoozeAlarm (e.g. on a key).
+  function stopAlarm() { alarmState.stop() }
+  function snoozeAlarm() { alarmState.snooze() }
+
   property int alarmRings: 0
+  // Stop / Snooze (on any monitor's copy): cut the sound now, not after the
+  // clip that's already playing.
+  Connections {
+    target: alarmState
+    function onRingingChanged() {
+      if (alarmState.ringing) return
+      alarmSound.stop()
+      if (alarm.running) alarm.running = false
+    }
+  }
   Timer {
     id: alarmSound
     interval: 7000              // the sound is ~6 s

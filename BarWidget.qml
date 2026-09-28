@@ -169,6 +169,8 @@ BarWidget {
     function openFace(): void { root.openFace() }
     function toggleFace(): void { root.toggleFace() }
     function openPage(name: string): void { root.openFacePage(name) }
+    function stopAlarm(): void { if (faceLoader.item) faceLoader.item.stopAlarm() }
+    function snoozeAlarm(): void { if (faceLoader.item) faceLoader.item.snoozeAlarm() }
   }
 
   // The open-panel mark: an accent bar on the bar's inner edge, under (or
