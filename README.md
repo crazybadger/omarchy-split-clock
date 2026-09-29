@@ -1,13 +1,13 @@
 # Apple-like Clock aka Better Calendar
 
-![The calendar, the analogue clock, the stopwatch and the countdown timer](preview.png)
+![The calendar, world clock, analogue clock, stopwatch, countdown timer and alarms](preview.png)
 
 Omarchy's bar clock, split in two:
 
 - **Click the day** (`Saturday`) for the familiar calendar popup, exactly as on the stock clock.
-- **Click the time** (`23:54`) for a clock card with four pages, after Apple's Clock app: a
-  **world clock**, a minimalist **analogue clock**, a **stopwatch** with lap times, and a
-  **countdown timer** that remembers your last five timers.
+- **Click the time** (`23:54`) for a clock card with five pages, after Apple's Clock app: a
+  **world clock**, a minimalist **analogue clock**, a **stopwatch** with lap times, a
+  **countdown timer** that remembers your last five timers and can repeat, and **alarms**.
 
 Both popups appear in the same spot and the bar hands over between them with its normal cross-fade,
 so you can click from one half to the other. `Esc` closes either; `Tab` flips from the clock card to
@@ -15,10 +15,12 @@ the calendar.
 
 ## The clock card
 
-Four dots along the bottom of the card switch pages: **world · clock · stopwatch · timer**. You can
-also use `←` / `→` (or `h` / `l`), or swipe sideways with two fingers on a touchpad. The card stays
-the same size on every page. It always opens on the clock -- or on the stopwatch or timer while one
-is running, so the thing that's counting is what you see first.
+Five small icons along the bottom of the card switch pages -- **world · clock · stopwatch · timer ·
+alarms** (globe, clock, stopwatch, hourglass, alarm clock; the current one lit in your theme's accent,
+and each names itself on hover). You can also use `←` / `→` (or `h` / `l`), or swipe sideways with
+two fingers on a touchpad. The card stays the same size on every page. It always opens on the clock --
+or on a ringing alarm, or on the stopwatch or timer while one is running, so the thing that needs you
+is what you see first.
 
 ### World clock
 
@@ -88,6 +90,28 @@ Switch it off mid-run and the current round finishes like a normal timer.
 | `Space` | Start / Pause / Resume |
 | `Enter` | Reset |
 | `r` | Repeat on / off |
+
+### Alarms
+
+A time, an optional label, and the days it repeats on -- or none, for a one-off. At the top, type the
+time the way you set the timer (the digits fill in from the right, so `0` `7` `3` `0` is `07:30`) or
+scroll over the hours or minutes, add a label if you like, then **+** or `Enter`. Below, your alarms
+in time-of-day order, earliest first, with a line saying which rings next (`Next: Tue 07:00 · in 9 h`).
+Under each alarm, click the day letters `M T W T F S S` to choose its repeat days; the switch turns it
+on or off; hover for the ringed **✕** that removes it. Six fit on the card, and that's the limit.
+
+When one goes off you get the alarm sound (repeating for up to a minute) and a notification that
+stays until you dismiss it; clicking it opens the Alarms page, where **Snooze** (9 minutes, as Apple's)
+and **Stop** have taken the place of the add row. A one-off alarm switches itself off once it has rung.
+
+Alarms ring while the laptop is awake. One that falls due while it's asleep or off doesn't ring hours
+late: you get a notification saying it was missed instead.
+
+| Key | |
+|-----|--|
+| `0`–`9`, `Backspace`, `x` | Set the time |
+| `Enter` | Add the alarm -- or Snooze, while one is ringing |
+| `Space` | Stop, while one is ringing |
 
 ### While something's running
 
@@ -170,7 +194,9 @@ right-clicking writes it back to `shell.json`.
 ```bash
 omarchy-shell crazybadger.split-clock toggle              # calendar
 omarchy-shell crazybadger.split-clock toggleFace          # clock card
-omarchy-shell crazybadger.split-clock openPage stopwatch  # clock card on a page: world | clock | stopwatch | timer
+omarchy-shell crazybadger.split-clock openPage stopwatch  # clock card on a page: world | clock | stopwatch | timer | alarms
+omarchy-shell crazybadger.split-clock stopAlarm           # stop a ringing alarm
+omarchy-shell crazybadger.split-clock snoozeAlarm         # snooze it for 9 minutes
 omarchy-shell crazybadger.split-clock close               # whichever is open
 ```
 
@@ -180,19 +206,20 @@ Handy for a keybinding — `openPage timer` straight to the timer, for instance.
 
 - Tested on Omarchy 4.0.4 with a top bar (horizontal) and briefly with a left bar (vertical: `Sat`,
   `23`, `—`, `51`), on one and two monitors. With several monitors every bar has its own copy of the
-  widget; they share the stopwatch, timer and world clocks, and a finished timer alerts once, not
-  once per screen.
+  widget; they share the stopwatch, timer, world clocks and alarms, and a finished timer or a
+  ringing alarm alerts once, not once per screen.
 - Plugins are unsandboxed code: read it before you install it. It is a handful of small QML files,
   one small Python helper, and the stock calendar.
-- **Saved state** -- the stopwatch, the timer and the world clocks -- lives in
-  `~/.local/state/crazybadger.split-clock/` (`stopwatch.json`, `timer.json`, `world.json`). The
+- **Saved state** -- the stopwatch, the timer, the world clocks and the alarms -- lives in
+  `~/.local/state/crazybadger.split-clock/` (`stopwatch.json`, `timer.json`, `world.json`,
+  `alarms.json`). The
   shell never reads or writes these itself: `split-clock-helper.py` does, and it refuses rather than
   follows a symlink. Every directory on the way there is opened relative to the one before without
   following links, the directory must be yours and private (it's created `0700`), and files must be
   regular files of yours under 64 KiB. Saves go to a new `0600` file that is then renamed into place
   through the same directory handle, so a link planted at a state path, or swapped in partway
   through, is never written through. The helper runs under a time limit and its output is capped.
-  Laps are capped at 999, recent timers at five, world clocks at six.
+  Laps are capped at 999, recent timers at five, world clocks and alarms at six.
 - 1.1.0 kept its state in `~/.local/state/crazybadger.split-clock.stopwatch.json` and `.timer.json`;
   those are no longer read, so delete them if you have them.
 - The accent underline that marks an open popup sits under whichever half you clicked and slides
@@ -206,6 +233,6 @@ Handy for a keybinding — `openPage timer` straight to the timer, for instance.
 `CalendarPanel.qml` and `Model.js` are Omarchy's own clock panel (MIT, Copyright (c) David Heinemeier
 Hansson), copied with only the plugin id changed. `BarWidget.qml` is adapted from Omarchy's clock
 widget, and `RunningReadout.qml` borrows the look and placement of Omarchy's `PopupCard`. The clock
-card, world clock, stopwatch and timer (`ClockPanel.qml`, `WorldClocks.qml`, `WorldPage.qml`,
-`Stopwatch.qml`, `StopwatchPage.qml`, `CountdownTimer.qml`, `TimerPage.qml`, `RoundButton.qml`,
-`Helper.qml`, `split-clock-helper.py`) are new. See `LICENSE`.
+card, world clock, stopwatch, timer and alarms (`ClockPanel.qml`, `WorldClocks.qml`, `WorldPage.qml`,
+`Stopwatch.qml`, `StopwatchPage.qml`, `CountdownTimer.qml`, `TimerPage.qml`, `Alarms.qml`,
+`AlarmsPage.qml`, `RoundButton.qml`, `Helper.qml`, `split-clock-helper.py`) are new. See `LICENSE`.
